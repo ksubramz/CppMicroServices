@@ -461,6 +461,7 @@ set(PACKAGE_CONFIG_RUNTIME_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set(PACKAGE_CONFIG_CMAKE_DIR ${US_CMAKE_DIR})
 
 set(US_RCC_EXECUTABLE_NAME usResourceCompiler CACHE INTERNAL "The target name of the usResourceCompiler executable.")
+set(US_ZIPINFO_EXECUTABLE_NAME usZipInfo CACHE INTERNAL "The target name of the usZipInfo executable.")
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}Config.cmake.in
@@ -500,6 +501,9 @@ configure_file(
   )
 
 export(TARGETS ${US_RCC_EXECUTABLE_NAME}
+       FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake)
+
+export(TARGETS ${US_ZIPINFO_EXECUTABLE_NAME}
        FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake)
 
 if(NOT US_NO_INSTALL)

@@ -110,7 +110,7 @@ usFunctionEmbedResources(TARGET ${_test_driver}
                        ZIP_ARCHIVES ${Framework_TARGET} ${_us_test_bundle_libs})
 
 # Register tests
-us_add_tests(${_test_driver} ${_tests})
+# us_add_tests(${_test_driver} ${_tests})
 
 if(US_MEMCHECK_COMMAND)
   set_tests_properties(memcheck_MemcheckTest PROPERTIES WILL_FAIL 1)
@@ -132,3 +132,5 @@ if(US_BUILD_SHARED_LIBS)
     add_dependencies(${_test_driver} ${_test_bundle})
   endforeach()
 endif()
+
+

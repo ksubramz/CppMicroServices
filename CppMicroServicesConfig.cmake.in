@@ -81,6 +81,7 @@ cmake_minimum_required(VERSION ${US_CMAKE_MINIMUM_REQUIRED_VERSION})
 list(APPEND CMAKE_MODULE_PATH "@PACKAGE_CONFIG_CMAKE_DIR@")
 
 set(US_RCC_EXECUTABLE_NAME @US_RCC_EXECUTABLE_NAME@)
+set(US_ZIPINFO_EXECUTABLE_NAME @US_ZIPINFO_EXECUTABLE_NAME@)
 set(US_BUNDLE_INIT_TEMPLATE "@PACKAGE_CONFIG_CMAKE_DIR@/BundleInit.cpp")
 set(US_RESOURCE_RC_TEMPLATE "@PACKAGE_CONFIG_CMAKE_DIR@/cppmicroservices_resources.rc.in")
 set(US_CMAKE_RESOURCE_DEPENDENCIES_CPP "@PACKAGE_CONFIG_CMAKE_DIR@/CMakeResourceDependencies.cpp")
@@ -90,6 +91,14 @@ find_program(US_RCC_EXECUTABLE ${US_RCC_EXECUTABLE_NAME}
              PATHS "@PACKAGE_CONFIG_RUNTIME_DIR@"
              PATH_SUFFIXES Release Debug RelWithDebInfo MinSizeRel)
 mark_as_advanced(US_RCC_EXECUTABLE)
+
+# The CppMicroServices zip info
+find_program(US_ZIPINFO_EXECUTABLE ${US_ZIPINFO_EXECUTABLE_NAME}
+             PATHS "@PACKAGE_CONFIG_RUNTIME_DIR@"
+             PATH_SUFFIXES Release Debug RelWithDebInfo MinSizeRel)
+
+mark_as_advanced(US_RCC_EXECUTABLE)
+mark_as_advanced(US_ZIPINFO_EXECUTABLE)
 
 # Include helper macros
 include(CMakeParseArguments)
