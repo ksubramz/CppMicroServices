@@ -87,14 +87,13 @@ set(_test_driver us${PROJECT_NAME}TestDriver)
 set(_test_sourcelist_extra_args )
 create_test_sourcelist(_srcs ${_test_driver}.cpp ${_tests} ${_test_sourcelist_extra_args})
 set(_third_party_srcs ../../third_party/miniz.c)
+set(_resource_compiler_srcs ../../tools/rc/ResourceCompiler.cpp)
 
 # Generate a custom "bundle init" file for the test driver executable
 usFunctionGenerateBundleInit(_srcs)
 
 usFunctionGetResourceSource(TARGET ${_test_driver} OUT _srcs)
-add_executable(${_test_driver} ${_srcs} ${_additional_srcs} ${_third_party_srcs})
-# Needed for ResourceCompilerTest
-add_dependencies(${_test_driver} ${US_RCC_EXECUTABLE_NAME})
+add_executable(${_test_driver} ${_srcs} ${_additional_srcs} ${_resource_compiler_srcs} ${_third_party_srcs})
 set_property(TARGET ${_test_driver} APPEND PROPERTY COMPILE_DEFINITIONS US_BUNDLE_NAME=main)
 set_property(TARGET ${_test_driver} PROPERTY US_BUNDLE_NAME main)
 if(NOT US_BUILD_SHARED_LIBS)

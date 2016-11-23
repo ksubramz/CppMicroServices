@@ -445,18 +445,13 @@ static int checkSanity(option::Parser& parse,
   return return_code;
 }
 
-// ---------------------------------------------------------------------------------
-// -----------------------------    MAIN ENTRY POINT    ----------------------------
-// ---------------------------------------------------------------------------------
-
-int main(int argc, char** argv)
+// Entry point
+int ResourceCompiler(int argc, char** argv)
 {
   int compressionLevel = MZ_DEFAULT_LEVEL; //default compression level;
   int return_code = EXIT_SUCCESS;
   std::string bundleName;
 
-  argc -= (argc > 0);
-  argv += (argc > 0); // skip program name argv[0]
   option::Stats stats(usage, argc, argv);
   std::unique_ptr<option::Option[]> options(new option::Option[stats.options_max]);
   std::unique_ptr<option::Option[]> buffer(new option::Option[stats.buffer_max]);

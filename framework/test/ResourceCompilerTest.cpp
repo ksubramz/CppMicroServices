@@ -24,6 +24,7 @@
 #include "TestUtils.h"
 #include "TestingConfig.h"
 #include "ZipFile.h"
+#include "../../tools/rc/ResourceCompiler.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -112,6 +113,17 @@ static void createDirHierarchy(const std::string& tempdir)
   create_mock_dll("sample1.dll", data2);
 }
 
+static int callResourceCompiler(std::vector<std::string>& args)
+{
+  int argc = static_cast<int>(args.size());
+  std::vector<const char *> argvv(args.size());
+  std::transform(args.begin(), args.end(),
+    argvv.begin(), [](std::string& str){ return str.c_str(); });
+  char** argv = const_cast<char**>(argvv.data());
+  int ret = ResourceCompiler(argc, argv);
+  return ret;
+}
+
 static inline void testExists(const std::vector<std::string>& entryNames,
                               const std::string& name)
 {
@@ -122,14 +134,14 @@ static inline void testExists(const std::vector<std::string>& entryNames,
 /*
 * Use resource compiler to create Example.zip with just manifest.json
 */
-static void testManifestAdd(const std::string& rcbinpath, const std::string& tempdir)
+static void testManifestAdd(const std::string& tempdir)
 {
-  std::ostringstream cmd;
-  cmd << "\"" << rcbinpath;
-  cmd << " --bundle-name " << "mybundle";
-  cmd << " --out-file " << tempdir << testing::DIR_SEP << "Example.zip";
-  cmd << " --manifest-add " << tempdir << testing::DIR_SEP << "manifest.json\"";
-  int ret = std::system(cmd.str().c_str());
+  std::vector<std::string> args = {
+    "--bundle-name", "mybundle",
+    "--out-file", tempdir + testing::DIR_SEP + "Example.zip",
+    "--manifest-add", tempdir + testing::DIR_SEP + "manifest.json"
+  };
+  int ret = callResourceCompiler(args);
   US_TEST_CONDITION_REQUIRED(ret == 0, "Cmdline invocation in testManifestAdd returns 0")
 
   ZipFile zip(tempdir + testing::DIR_SEP + "Example.zip");
@@ -432,25 +444,14 @@ int ResourceCompilerTest(int /*argc*/, char* /*argv*/[])
 {
   US_TEST_BEGIN("ResourceCompilerTest");
 
-  auto rcbinpath = testing::BIN_PATH + testing::DIR_SEP + "usResourceCompiler" + testing::EXE_EXT;
-  /*
-  * If ResourceCompiler executable is not found, we can't run the tests, we
-  * mark it as a failure and exit
-  */
-  std::ifstream binf(rcbinpath.c_str());
-  if (!binf.good())
-  {
-    US_TEST_FAILED_MSG(<< "Cannot find usResourceCompiler executable.");
-    return EXIT_FAILURE;
-  }
-
   auto tempdir = testing::GetTempDirectory();
+  std::string rcbinpath("foo");
 
   US_TEST_NO_EXCEPTION_REQUIRED( makeCleanSlate(tempdir) );
 
   US_TEST_NO_EXCEPTION_REQUIRED( createDirHierarchy(tempdir) );
 
-  US_TEST_NO_EXCEPTION( testManifestAdd(rcbinpath, tempdir) );
+  US_TEST_NO_EXCEPTION( testManifestAdd(tempdir) );
 
   US_TEST_NO_EXCEPTION( testManifestResAdd(rcbinpath, tempdir) );
 
