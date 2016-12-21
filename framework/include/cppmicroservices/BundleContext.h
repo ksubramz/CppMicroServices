@@ -26,7 +26,7 @@
 #include "cppmicroservices/ListenerFunctors.h"
 #include "cppmicroservices/ServiceInterface.h"
 #include "cppmicroservices/ServiceRegistration.h"
-#include "cppmicroservices/function_traits.h"
+#include "cppmicroservices/FunctionTraits.h"
 
 #include <memory>
 #include <cstdint>
