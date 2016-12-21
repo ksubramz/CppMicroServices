@@ -26,8 +26,10 @@
 #include "cppmicroservices/ListenerFunctors.h"
 #include "cppmicroservices/ServiceInterface.h"
 #include "cppmicroservices/ServiceRegistration.h"
+#include "cppmicroservices/function_traits.h"
 
 #include <memory>
+#include <cstdint>
 
 namespace cppmicroservices {
 
@@ -617,6 +619,15 @@ public:
   void AddFrameworkListener(const FrameworkListener& listener);
   void RemoveFrameworkListener(const FrameworkListener& listener);
 
+  template <typename ListenerType>
+  typename std::enable_if<is_callable<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+  AddFrameworkListener(const ListenerType& listener);
+
+  template <typename ListenerType>
+  typename std::enable_if<is_callable<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+  AddFrameworkListener(const ListenerType& listener);
+
+
   /**
    * Adds the specified <code>callback</code> with the
    * specified <code>filter</code> to the context bundles's list of listeners.
@@ -847,9 +858,27 @@ private:
   void AddBundleListener(const BundleListener& delegate, void* data);
   void RemoveBundleListener(const BundleListener& delegate, void* data);
 
+  void AddFrameworkListener(const FrameworkListener& listener, uintptr_t address);
+
+  template <typename ListenerType>
+    typename std::enable_if<std::is_class<ListenerType>::value, uintptr_t>::type
+    getAddress(const ListenerType& func)
+    {
+      return reinterpret_cast<uintptr_t>(&func);
+    }
+
+  template <typename ListenerType>
+    typename std::enable_if<!std::is_class<ListenerType>::value, uintptr_t>::type
+    getAddress(const ListenerType& func)
+    {
+      return reinterpret_cast<uintptr_t>(static_cast<void *>(func));
+    }
+
   std::shared_ptr<BundleContextPrivate> d;
 };
 
 } // namespace cppmicroservices
+
+#include "cppmicroservices/BundleContext.tpp"
 
 #endif /* CPPMICROSERVICES_BUNDLECONTEXT_H */

@@ -12,6 +12,7 @@ set(_public_headers
   cppmicroservices/LDAPFilter.h
   cppmicroservices/LDAPProp.h
   cppmicroservices/ListenerFunctors.h
+  cppmicroservices/function_traits.h
   cppmicroservices/SharedData.h
   cppmicroservices/SharedLibrary.h
   cppmicroservices/ShrinkableMap.h
@@ -46,6 +47,7 @@ set(_public_headers
   cppmicroservices/Bundle.h
   cppmicroservices/BundleActivator.h
   cppmicroservices/BundleContext.h
+  cppmicroservices/BundleContext.tpp
   cppmicroservices/BundleEvent.h
   cppmicroservices/BundleEventHook.h
   cppmicroservices/BundleFindHook.h

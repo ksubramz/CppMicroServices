@@ -31,15 +31,19 @@
 
 #include <list>
 #include <mutex>
+#include <atomic>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <cstdint>
 
 namespace cppmicroservices {
 
 class CoreBundleContext;
 class BundleContextPrivate;
+
+using FrameworkToken = std::uint64_t;
 
 /**
  * Here we handle all listeners that bundles have registered.
@@ -57,6 +61,7 @@ public:
 
   typedef std::unordered_map<std::string, std::list<ServiceListenerEntry> > CacheType;
   typedef std::unordered_set<ServiceListenerEntry> ServiceListenerEntries;
+
 
 private:
 
@@ -78,6 +83,10 @@ private:
   ServiceListenerEntries serviceSet;
 
   CoreBundleContext* coreCtx;
+
+  std::atomic_uint64_t frameworkListenerId;
+  FrameworkToken MakeToken();
+  FrameworkToken MakeToken(std::uintptr_t address) const;
 
 public:
 

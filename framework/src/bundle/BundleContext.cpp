@@ -474,5 +474,20 @@ std::vector<Bundle> BundleContext::InstallBundles(const std::string& location)
   return b->coreCtx->bundleRegistry.Install(location, b);
 }
 
+void BundleContext::AddFrameworkListener(const FrameworkListener& listener,
+                                         uintptr_t address)
+{
+  d->CheckValid();
+  auto b = (d->Lock(), d->bundle);
+  US_UNUSED(address);
+
+  // CONCURRENCY NOTE: This is a check-then-act situation,
+  // but we ignore it since the time window is small and
+  // the result is the same as if the calling thread had
+  // won the race condition.
+
+  b->coreCtx->listeners.AddFrameworkListener(d, listener, nullptr);
+}
+
 
 }

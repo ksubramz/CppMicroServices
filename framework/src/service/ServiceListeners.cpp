@@ -61,7 +61,7 @@ struct FrameworkListenerCompare : std::binary_function<std::pair<FrameworkListen
 };
 
 ServiceListeners::ServiceListeners(CoreBundleContext* coreCtx)
-  : coreCtx(coreCtx)
+  : coreCtx(coreCtx), frameworkListenerId(0)
 {
   hashedServiceKeys.push_back(Constants::OBJECTCLASS);
   hashedServiceKeys.push_back(Constants::SERVICE_ID);
@@ -136,6 +136,21 @@ void ServiceListeners::RemoveBundleListener(const std::shared_ptr<BundleContextP
 {
   auto l = bundleListenerMap.Lock(); US_UNUSED(l);
   bundleListenerMap.value[context].remove_if(std::bind(BundleListenerCompare(), std::make_pair(listener, data), std::placeholders::_1));
+}
+
+FrameworkToken ServiceListeners::MakeToken()
+{
+  FrameworkToken token = frameworkListenerId;
+  frameworkListenerId++;
+  token |= 0x8000000000000000;
+  return token;
+}
+
+FrameworkToken ServiceListeners::MakeToken(std::uintptr_t address) const
+{
+  FrameworkToken token = static_cast<std::uint64_t>(address);
+  token &= 0x7FFFFFFFFFFFFFFF;
+  return token;
 }
 
 void ServiceListeners::AddFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, const FrameworkListener& listener, void* data)
