@@ -39,8 +39,6 @@ namespace cppmicroservices
   };
 
   // build R (C::*)(Args...) from R (Args...)
-  //       R (C::*)(Args...) const from R (Args...) const
-  //       R (C::*)(Args...) volatile from R (Args...) volatile
   // compile error if signature is not a valid member function signature
   template <typename, typename>
   struct build_class_function;
@@ -50,20 +48,6 @@ namespace cppmicroservices
   {
     using type = R(C::*)(Args...);
   };
-
-  /*
-  template <typename C, typename R, typename ... Args>
-  struct build_class_function < C, R(Args...) const >
-  {
-  using type = R(C::*)(Args...) const;
-  };
-
-  template <typename C, typename R, typename ... Args>
-  struct build_class_function < C, R(Args...) volatile >
-  {
-  using type = R(C::*)(Args...) volatile;
-  };
-  */
 
   // determine whether a class C has an operator() with signature S
   template <typename C, typename S>
@@ -102,7 +86,7 @@ namespace cppmicroservices
 
   // C is a class, delegate to is_functor_with_signature
   template <typename C, typename S, bool>
-  struct is_callable_impl
+  struct is_functor_or_free_function_impl
   : std::integral_constant <
   bool, is_functor_with_signature<C, S>::value
   >
@@ -110,7 +94,7 @@ namespace cppmicroservices
 
   // F is not a class, delegate to is_function_with_signature
   template <typename F, typename S>
-  struct is_callable_impl<F, S, false>
+  struct is_functor_or_free_function_impl<F, S, false>
   : std::integral_constant <
   bool, is_function_with_signature<F, S>::value
   >
@@ -120,8 +104,8 @@ namespace cppmicroservices
   // Compliant with functors, i.e. classes that declare operator(); and free
   // function pointers: R (*)(Args...), but not R (Args...)!
   template <typename Callable, typename Signature>
-  struct is_callable
-  : is_callable_impl <
+  struct is_functor_or_free_function
+  : is_functor_or_free_function_impl <
   Callable, Signature,
   std::is_class<Callable>::value
   >

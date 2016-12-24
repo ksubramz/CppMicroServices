@@ -12,7 +12,7 @@ set(_public_headers
   cppmicroservices/LDAPFilter.h
   cppmicroservices/LDAPProp.h
   cppmicroservices/ListenerFunctors.h
-  cppmicroservices/function_traits.h
+  cppmicroservices/FunctionTraits.h
   cppmicroservices/SharedData.h
   cppmicroservices/SharedLibrary.h
   cppmicroservices/ShrinkableMap.h

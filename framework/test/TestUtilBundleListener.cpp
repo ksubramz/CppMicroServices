@@ -26,6 +26,15 @@
 
 namespace cppmicroservices {
 
+void TestFrameworkListener::FrameworkChanged1(const FrameworkEvent& event)
+{
+  std::cout << std::endl <<  "From listener FrameworkChanged1 " << std::endl;
+}
+void TestFrameworkListener::FrameworkChanged2(const FrameworkEvent& event)
+{
+  std::cout << std::endl <<  "From listener FrameworkChanged2 " << std::endl;
+}
+
 TestBundleListener::TestBundleListener()
   : serviceEvents(), bundleEvents()
 {}

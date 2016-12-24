@@ -49,19 +49,15 @@ struct BundleListenerCompare : std::binary_function<std::pair<BundleListener, vo
   }
 };
 
-struct FrameworkListenerCompare : std::binary_function<std::pair<FrameworkListener, void*>,
-                                                       std::pair<FrameworkListener, void*>, bool>
+auto FrameworkListenerCompare = [](const FrameworkToken& token,
+                                   const std::tuple<FrameworkToken, FrameworkListener>& p1)
 {
-  bool operator()(const std::pair<FrameworkListener, void*>& p1,
-                  const std::pair<FrameworkListener, void*>& p2) const
-  {
-    return p1.second == p2.second &&
-           p1.first.target<void(const FrameworkEvent&)>() == p2.first.target<void(const FrameworkEvent&)>();
-  }
+  return token == std::get<0>(p1);
 };
 
+
 ServiceListeners::ServiceListeners(CoreBundleContext* coreCtx)
-  : coreCtx(coreCtx), frameworkListenerId(0)
+  : coreCtx(coreCtx)
 {
   hashedServiceKeys.push_back(Constants::OBJECTCLASS);
   hashedServiceKeys.push_back(Constants::SERVICE_ID);
@@ -138,38 +134,72 @@ void ServiceListeners::RemoveBundleListener(const std::shared_ptr<BundleContextP
   bundleListenerMap.value[context].remove_if(std::bind(BundleListenerCompare(), std::make_pair(listener, data), std::placeholders::_1));
 }
 
-FrameworkToken ServiceListeners::MakeToken()
+FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPrivate>& context)
 {
-  FrameworkToken token = frameworkListenerId;
-  frameworkListenerId++;
-  token |= 0x8000000000000000;
+  auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
+  auto& id = frameworkListenerMap.id[context];
+  id++;
+  FrameworkToken token{ 0x0, id };
   return token;
 }
 
-FrameworkToken ServiceListeners::MakeToken(std::uintptr_t address) const
+uint64_t ServiceListeners::GetAddressCount(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address)
 {
-  FrameworkToken token = static_cast<std::uint64_t>(address);
-  token &= 0x7FFFFFFFFFFFFFFF;
+  uint64_t count = 0;
+  auto& listeners = frameworkListenerMap.value[context];
+  auto& id = frameworkListenerMap.id[context];
+
+  for (auto& listener : listeners)
+  {
+    if (std::get<0>(listener).first == static_cast<std::uint64_t>(address))
+    {
+      count++;
+    }
+  }
+  return count;
+}
+
+FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPrivate>& context,
+                                           std::uintptr_t address, bool addIfPresent)
+{
+  FrameworkToken token{ static_cast<std::uint64_t>(address), 0x0 };
+
+  if (addIfPresent)
+  {
+    auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
+    auto& id = frameworkListenerMap.id[context];
+
+    if (GetAddressCount(context, address) > 0)
+    {
+        id++;
+        token.second = id;
+    }
+  }
+
   return token;
 }
 
-void ServiceListeners::AddFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, const FrameworkListener& listener, void* data)
+void ServiceListeners::AddFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context,
+                                            const FrameworkListener& listener,
+                                            FrameworkToken token)
 {
   auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
   auto& listeners = frameworkListenerMap.value[context];
-  if (std::find_if(listeners.begin(), listeners.end(), std::bind(FrameworkListenerCompare(), std::make_pair(listener, data), std::placeholders::_1)) == listeners.end())
+  if (std::find_if(listeners.begin(), listeners.end(),
+                   std::bind(FrameworkListenerCompare, token, std::placeholders::_1)) == listeners.end())
   {
-    listeners.push_back(std::make_pair(listener, data));
+    listeners.push_back(std::make_tuple(token, listener));
   }
 }
 
-void ServiceListeners::RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, const FrameworkListener& listener, void* data)
+void ServiceListeners::RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context,
+                                               FrameworkToken token)
 {
   auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
   auto& listeners = frameworkListenerMap.value[context];
   listeners.erase(std::remove_if(listeners.begin(),
                                  listeners.end(),
-                                 std::bind(FrameworkListenerCompare(), std::make_pair(listener, data), std::placeholders::_1)),
+                                 std::bind(FrameworkListenerCompare, token, std::placeholders::_1)),
                   listeners.end());
 }
 
@@ -190,7 +220,7 @@ void ServiceListeners::SendFrameworkEvent(const FrameworkEvent& evt)
     {
       try
       {
-        (listener.first)(evt);
+        std::get<1>(listener)(evt);
       }
       catch (...)
       {

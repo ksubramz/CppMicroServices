@@ -126,7 +126,7 @@ void testStartStopFrameworkEvents()
   public:
     void operator()(const FrameworkEvent&)
     {
-      std::cout << "class CB" << std::endl;
+      std::cout << "class CB at " << this << std::endl;
     }
   };
 
@@ -211,22 +211,27 @@ void testAddRemoveFrameworkListener()
   auto callback2 = [](const FrameworkEvent&) { std::cout << "From CB2" << std::endl; };
   f.Init();
   fCtx = f.GetBundleContext();
-  // auto callbacklamb = [](const FrameworkEvent&) { std::cout << "From CB1" << std::endl; };
-  // CB cb;
-  // static_assert(is_callable<CB, void(const FrameworkEvent&)>::value, "is callable");
-  // static_assert(is_callable<decltype(&callback1), void(const FrameworkEvent&)>::value, "is callable");
-  //static_assert(!is_callable<callbacklamb, void(const FrameworkEvent&)>::value, "is callable");
-  fCtx.AddFrameworkListener(callback1);
+  auto token = fCtx.AddFrameworkListener(callback1);
   std::cout << callback1fn << std::endl;
-  fCtx.AddFrameworkListener(callback1fn);
+  auto token2 = fCtx.AddFrameworkListener(callback1fn);
   std::cout << callback2fn << std::endl;
   fCtx.AddFrameworkListener(&callback2fn);
   CB cb;
   std::cout << &cb << std::endl;
   fCtx.AddFrameworkListener(cb);
   fCtx.AddFrameworkListener(CB());
-  //fCtx.RemoveFrameworkListener(callback2);
-  //fCtx.AddFrameworkListener(CB());
+  std::cout << callback2fn << std::endl;
+  fCtx.RemoveFrameworkListener(cb);
+  fCtx.RemoveFrameworkListener(token2);
+  fCtx.RemoveFrameworkListener(token);
+  f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+
+  f.Init();
+  fCtx = f.GetBundleContext();
+  fCtx.AddFrameworkListener(callback1);
+  fCtx.AddFrameworkListener(callback1fn);
   f.Start();    // generate framework event (started)
 }
 

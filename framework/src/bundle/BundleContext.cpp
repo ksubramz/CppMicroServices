@@ -360,7 +360,7 @@ void BundleContext::RemoveBundleListener(const BundleListener& delegate)
   b->coreCtx->listeners.RemoveBundleListener(d, delegate, nullptr);
 }
 
-void BundleContext::AddFrameworkListener(const FrameworkListener& listener)
+FrameworkToken BundleContext::AddFrameworkListener(const FrameworkListener& listener)
 {
   d->CheckValid();
   auto b = (d->Lock(), d->bundle);
@@ -370,11 +370,26 @@ void BundleContext::AddFrameworkListener(const FrameworkListener& listener)
   // the result is the same as if the calling thread had
   // won the race condition.
 
-  b->coreCtx->listeners.AddFrameworkListener(d, listener, nullptr);
+  FrameworkToken token = b->coreCtx->listeners.MakeToken(d);
+  b->coreCtx->listeners.AddFrameworkListener(d, listener, token);
+  return token;
 }
 
 void BundleContext::RemoveFrameworkListener(const FrameworkListener& listener)
 {
+  //d->CheckValid();
+  //auto b = (d->Lock(), d->bundle);
+
+  // CONCURRENCY NOTE: This is a check-then-act situation,
+  // but we ignore it since the time window is small and
+  // the result is the same as if the calling thread had
+  // won the race condition.
+
+  //b->coreCtx->listeners.RemoveFrameworkListener(d, listener);
+}
+
+void BundleContext::RemoveFrameworkListener(FrameworkToken token)
+{
   d->CheckValid();
   auto b = (d->Lock(), d->bundle);
 
@@ -383,7 +398,8 @@ void BundleContext::RemoveFrameworkListener(const FrameworkListener& listener)
   // the result is the same as if the calling thread had
   // won the race condition.
 
-  b->coreCtx->listeners.RemoveFrameworkListener(d, listener, nullptr);
+  b->coreCtx->listeners.RemoveFrameworkListener(d, token);
+
 }
 
 void BundleContext::AddServiceListener(const ServiceListener& delegate, void* data,
@@ -474,19 +490,36 @@ std::vector<Bundle> BundleContext::InstallBundles(const std::string& location)
   return b->coreCtx->bundleRegistry.Install(location, b);
 }
 
-void BundleContext::AddFrameworkListener(const FrameworkListener& listener,
-                                         uintptr_t address)
+FrameworkToken BundleContext::AddFrameworkListener(const FrameworkListener& listener,
+                                                   uintptr_t address,
+                                                   bool addIfPresent)
 {
   d->CheckValid();
   auto b = (d->Lock(), d->bundle);
-  US_UNUSED(address);
 
   // CONCURRENCY NOTE: This is a check-then-act situation,
   // but we ignore it since the time window is small and
   // the result is the same as if the calling thread had
   // won the race condition.
+  FrameworkToken token = b->coreCtx->listeners.MakeToken(d, address, addIfPresent);
+  b->coreCtx->listeners.AddFrameworkListener(d, listener, token);
+  return token;
+}
 
-  b->coreCtx->listeners.AddFrameworkListener(d, listener, nullptr);
+void BundleContext::RemoveFrameworkListener(uintptr_t address)
+{
+  d->CheckValid();
+  auto b = (d->Lock(), d->bundle);
+
+  // CONCURRENCY NOTE: This is a check-then-act situation,
+  // but we ignore it since the time window is small and
+  // the result is the same as if the calling thread had
+  // won the race condition.
+  if (b->coreCtx->listeners.GetAddressCount(d, address) == 1)
+  {
+    FrameworkToken token = b->coreCtx->listeners.MakeToken(d, address, false);
+    b->coreCtx->listeners.RemoveFrameworkListener(d, token);
+  }
 }
 
 

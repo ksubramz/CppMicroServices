@@ -36,14 +36,11 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <cstdint>
 
 namespace cppmicroservices {
 
 class CoreBundleContext;
 class BundleContextPrivate;
-
-using FrameworkToken = std::uint64_t;
 
 /**
  * Here we handle all listeners that bundles have registered.
@@ -65,9 +62,11 @@ public:
 
 private:
 
-  typedef std::map<std::shared_ptr<BundleContextPrivate>, std::vector<std::pair<FrameworkListener, void*> > > FrameworkListeners;
+  typedef std::map<std::shared_ptr<BundleContextPrivate>, std::vector<std::tuple<FrameworkToken, FrameworkListener> > > FrameworkListeners;
+  typedef std::unordered_map<std::shared_ptr<BundleContextPrivate>, std::atomic<uint64_t> > FrameworkTokenId;
   struct : public MultiThreaded<> {
       FrameworkListeners value;
+      FrameworkTokenId id;
   } frameworkListenerMap;
 
   std::vector<std::string> hashedServiceKeys;
@@ -84,13 +83,13 @@ private:
 
   CoreBundleContext* coreCtx;
 
-  std::atomic_uint64_t frameworkListenerId;
-  FrameworkToken MakeToken();
-  FrameworkToken MakeToken(std::uintptr_t address) const;
-
 public:
 
   ServiceListeners(CoreBundleContext* coreCtx);
+
+  uint64_t GetAddressCount(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address);
+  FrameworkToken MakeToken(const std::shared_ptr<BundleContextPrivate>& context);
+  FrameworkToken MakeToken(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address, bool addIfPresent);
 
   void Clear();
 
@@ -146,7 +145,8 @@ public:
   * @param listener The framework listener to add.
   * @param data Additional data to distinguish FrameworkListener objects.
   */
-  void AddFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, const FrameworkListener& listener, void* data);
+  void AddFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, const FrameworkListener& listener,
+                            FrameworkToken token);
 
   /**
   * Remove framework listener from current framework. Silently ignore
@@ -156,7 +156,7 @@ public:
   * @param listener Object to remove.
   * @param data Additional data to distinguish FrameworkListener objects.
   */
-  void RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, const FrameworkListener& listener, void* data);
+  void RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, FrameworkToken token);
 
   void SendFrameworkEvent(const FrameworkEvent& evt);
 

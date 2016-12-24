@@ -616,17 +616,26 @@ public:
   void AddBundleListener(const BundleListener& delegate);
   void RemoveBundleListener(const BundleListener& delegate);
 
-  void AddFrameworkListener(const FrameworkListener& listener);
+  FrameworkToken AddFrameworkListener(const FrameworkListener& listener);
   void RemoveFrameworkListener(const FrameworkListener& listener);
 
   template <typename ListenerType>
-  typename std::enable_if<is_callable<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+  typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, FrameworkToken>::type
   AddFrameworkListener(const ListenerType& listener);
 
   template <typename ListenerType>
-  typename std::enable_if<is_callable<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+  typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, FrameworkToken>::type
   AddFrameworkListener(const ListenerType& listener);
 
+  template <typename ListenerType>
+  typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+  RemoveFrameworkListener(const ListenerType& listener);
+
+  template <typename ListenerType>
+  typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+  RemoveFrameworkListener(const ListenerType& listener);
+
+  void RemoveFrameworkListener(FrameworkToken token);
 
   /**
    * Adds the specified <code>callback</code> with the
@@ -770,9 +779,11 @@ public:
    * @see FrameworkEvent
    */
   template<class R>
-  void AddFrameworkListener(R* receiver, void(R::*callback)(const FrameworkEvent&))
+  FrameworkToken AddFrameworkListener(R* receiver, void(R::*callback)(const FrameworkEvent&))
   {
-    AddFrameworkListener(BindFrameworkListenerToFunctor(receiver, callback));
+    uintptr_t receiver_address = reinterpret_cast<uintptr_t>(receiver);
+    return AddFrameworkListener(BindFrameworkListenerToFunctor(receiver, callback),
+                                receiver_address, true);
   }
 
   /**
@@ -792,7 +803,8 @@ public:
   template<class R>
   void RemoveFrameworkListener(R* receiver, void(R::*callback)(const FrameworkEvent&))
   {
-    RemoveFrameworkListener(BindFrameworkListenerToFunctor(receiver, callback));
+    uintptr_t receiver_address = reinterpret_cast<uintptr_t>(receiver);
+    RemoveFrameworkListener(receiver_address);
   }
 
   /**
@@ -858,21 +870,22 @@ private:
   void AddBundleListener(const BundleListener& delegate, void* data);
   void RemoveBundleListener(const BundleListener& delegate, void* data);
 
-  void AddFrameworkListener(const FrameworkListener& listener, uintptr_t address);
+  FrameworkToken AddFrameworkListener(const FrameworkListener& listener, uintptr_t address, bool addDuplicate);
+  void RemoveFrameworkListener(uintptr_t address);
 
   template <typename ListenerType>
-    typename std::enable_if<std::is_class<ListenerType>::value, uintptr_t>::type
-    getAddress(const ListenerType& func)
-    {
-      return reinterpret_cast<uintptr_t>(&func);
-    }
+  typename std::enable_if<std::is_class<ListenerType>::value, uintptr_t>::type
+  getAddress(const ListenerType& func)
+  {
+    return reinterpret_cast<uintptr_t>(&func);
+  }
 
   template <typename ListenerType>
-    typename std::enable_if<!std::is_class<ListenerType>::value, uintptr_t>::type
-    getAddress(const ListenerType& func)
-    {
-      return reinterpret_cast<uintptr_t>(static_cast<void *>(func));
-    }
+  typename std::enable_if<!std::is_class<ListenerType>::value, uintptr_t>::type
+  getAddress(const ListenerType& func)
+  {
+    return reinterpret_cast<uintptr_t>(static_cast<void *>(func));
+  }
 
   std::shared_ptr<BundleContextPrivate> d;
 };

@@ -344,12 +344,24 @@ void TestListenerFunctors()
 {
   TestBundleListener listener1;
   TestBundleListener listener2;
+  TestFrameworkListener flistener;
+  TestFrameworkListener flistener1;
+  TestFrameworkListener flistener2;
 
   FrameworkFactory factory;
   auto framework = factory.NewFramework();
+  framework.Init();
+  auto bc = framework.GetBundleContext();
+  bc.AddFrameworkListener(&flistener, &TestFrameworkListener::FrameworkChanged1);
+  bc.AddFrameworkListener(&flistener, &TestFrameworkListener::FrameworkChanged2);
+  bc.AddFrameworkListener(&flistener1, &TestFrameworkListener::FrameworkChanged1);
+  bc.AddFrameworkListener(&flistener2, &TestFrameworkListener::FrameworkChanged2);
+  bc.RemoveFrameworkListener(&flistener, &TestFrameworkListener::FrameworkChanged1);
+  bc.RemoveFrameworkListener(&flistener, &TestFrameworkListener::FrameworkChanged2);
+  bc.RemoveFrameworkListener(&flistener1, &TestFrameworkListener::FrameworkChanged1);
+  bc.RemoveFrameworkListener(&flistener2, &TestFrameworkListener::FrameworkChanged2);
   framework.Start();
 
-  auto bc = framework.GetBundleContext();
 
   try
   {

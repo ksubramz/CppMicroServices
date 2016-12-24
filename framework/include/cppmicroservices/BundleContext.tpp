@@ -23,19 +23,34 @@
 namespace cppmicroservices {
 
 template <typename ListenerType>
-typename std::enable_if<is_callable<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, FrameworkToken>::type
 BundleContext::AddFrameworkListener(const ListenerType& listener)
 {
   uintptr_t address = getAddress(listener);
-  AddFrameworkListener(listener, address);
+  return AddFrameworkListener(listener, address, false);
 }
 
 template <typename ListenerType>
-typename std::enable_if<is_callable<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, FrameworkToken>::type
 BundleContext::AddFrameworkListener(const ListenerType& listener)
 {
   uintptr_t address = getAddress(listener);
-  AddFrameworkListener(listener, address);
+  return AddFrameworkListener(listener, address, false);
 }
 
+template <typename ListenerType>
+typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+BundleContext::RemoveFrameworkListener(const ListenerType& listener)
+{
+  uintptr_t address = getAddress(listener);
+  RemoveFrameworkListener(address);
+}
+
+template <typename ListenerType>
+typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+BundleContext::RemoveFrameworkListener(const ListenerType& listener)
+{
+  uintptr_t address = getAddress(listener);
+  RemoveFrameworkListener(address);
+}
 }
