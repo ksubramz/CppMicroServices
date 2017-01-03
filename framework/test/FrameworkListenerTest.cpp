@@ -111,32 +111,12 @@ void testStartStopFrameworkEvents()
   US_TEST_CONDITION_REQUIRED(l.CheckEvents(events), "Test for the correct number and order of Framework start/stop events.");
 }
 
-  void callback1fn(const FrameworkEvent&)
-  {
-    std::cout << "from free function cb1" << std::endl;
-  }
-
-   void callback2fn(const FrameworkEvent&)
-   {
-     std::cout << "from free function cb2" << std::endl;
-   }
-
-  class CB
-  {
-  public:
-    void operator()(const FrameworkEvent&)
-    {
-      std::cout << "class CB at " << this << std::endl;
-    }
-  };
-
-void testAddRemoveFrameworkListener() 
+void testAddRemoveFrameworkListener()
 {
   auto f = FrameworkFactory().NewFramework();
   f.Init();
   BundleContext fCtx{ f.GetBundleContext() };
 
-  /*
   // Test that the lambda is removed correctly if the lambda is referenced by a variable
   int count{ 0 };
   auto listener = [&count](const FrameworkEvent&) { ++count; };
@@ -176,51 +156,73 @@ void testAddRemoveFrameworkListener()
   US_TEST_CONDITION(count == 1, "Test listener was successfully removed");
   f.Stop();
   f.WaitForStop(std::chrono::milliseconds::zero());
-  */
 
-  //  @fixme issue #95 ... can't add more than one lambda defined listener
-  //  uncomment this block once issue #95 is fixed.
-  /*
-  int count1(0);
-  int count2(0);
-  auto listener_callback_counter1 = [&count1](const FrameworkEvent&) { ++count1; std::cout << "listener_callback_counter1: call count " << count1 << std::endl; };
-  auto listener_callback_counter2 = [&count2](const FrameworkEvent&) { ++count2; std::cout << "listener_callback_counter2: call count " << count2 << std::endl; };
-  auto listener_callback_throw = [](const FrameworkEvent&) { throw std::runtime_error("boo"); };
+  // @fixme issue #95 ... can't add more than one lambda defined listener
+  // uncomment this block once issue #95 is fixed.
+  //int count1(0);
+  //int count2(0);
+  //auto listener_callback_counter1 = [&count1](const FrameworkEvent&) { ++count1; std::cout << "listener_callback_counter1: call count " << count1 << std::endl; };
+  //auto listener_callback_counter2 = [&count2](const FrameworkEvent&) { ++count2; std::cout << "listener_callback_counter2: call count " << count2 << std::endl; };
+  //auto listener_callback_throw = [](const FrameworkEvent&) { throw std::runtime_error("boo"); };
+  //
+  //f.Init();
+  //fCtx = f.GetBundleContext();
+  //fCtx.AddFrameworkListener(listener_callback_counter1);
+  //fCtx.AddFrameworkListener(listener_callback_counter2);
+  //fCtx.AddFrameworkListener(listener_callback_throw);
 
+  //f.Start();    // generate framework event (started)
+  //US_TEST_CONDITION(count1 == 1, "Test that multiple framework listeners were called");
+  //US_TEST_CONDITION(count2 == 1, "Test that multiple framework listeners were called");
+
+  //fCtx.RemoveFrameworkListener(listener_callback_counter1);
+  //fCtx.RemoveFrameworkListener(listener_callback_counter2);
+  //fCtx.RemoveFrameworkListener(listener_callback_throw);
+
+  //f.Start();    // generate framework event (started)
+  //US_TEST_CONDITION(count1 == 1, "Test that multiple framework listeners were NOT called after removal");
+  //US_TEST_CONDITION(count2 == 1, "Test that multiple framework listeners were NOT called after removal");
+  // end @fixme issue #95
+}
+
+void callback_function_1(const FrameworkEvent&)
+{
+  std::cout << "From free function cb1" << std::endl;
+}
+
+void callback_function_2(const FrameworkEvent&)
+{
+  std::cout << "From free function cb2" << std::endl;
+}
+
+class CallbackFunctor
+{
+public:
+  void operator()(const FrameworkEvent&)
+  {
+    std::cout << "From function object of type CallbackFunctor " << std::endl;
+  }
+};
+
+void testMultipleListeners()
+{
+  auto f = FrameworkFactory().NewFramework();
+  f.Init();
+  BundleContext fCtx{ f.GetBundleContext() };
+
+  auto lambda1 = [](const FrameworkEvent&) { std::cout << "From lambda1" << std::endl; };
+  auto lambda2 = [](const FrameworkEvent&) { std::cout << "From lambda2" << std::endl; };
   f.Init();
   fCtx = f.GetBundleContext();
-  fCtx.AddFrameworkListener(listener_callback_counter1);
-  fCtx.AddFrameworkListener(listener_callback_counter2);
-  fCtx.AddFrameworkListener(listener_callback_throw);
+  CallbackFunctor cb;
 
-  f.Start();    // generate framework event (started)
-  US_TEST_CONDITION(count1 == 1, "Test that multiple framework listeners were called");
-  US_TEST_CONDITION(count2 == 1, "Test that multiple framework listeners were called");
-
-  fCtx.RemoveFrameworkListener(listener_callback_counter1);
-
-  fCtx.RemoveFrameworkListener(listener_callback_counter2);
-  fCtx.RemoveFrameworkListener(listener_callback_throw);
-
-  f.Start();    // generate framework event (started)
-  US_TEST_CONDITION(count1 == 1, "Test that multiple framework listeners were NOT called after removal");
-  US_TEST_CONDITION(count2 == 1, "Test that multiple framework listeners were NOT called after removal");
-  */
-  //  end @fixme issue #95
-  auto callback1 = [](const FrameworkEvent&) { std::cout << "From CB1" << std::endl; };
-  auto callback2 = [](const FrameworkEvent&) { std::cout << "From CB2" << std::endl; };
-  f.Init();
-  fCtx = f.GetBundleContext();
-  auto token = fCtx.AddFrameworkListener(callback1);
-  std::cout << callback1fn << std::endl;
-  auto token2 = fCtx.AddFrameworkListener(callback1fn);
-  std::cout << callback2fn << std::endl;
-  fCtx.AddFrameworkListener(&callback2fn);
-  CB cb;
-  std::cout << &cb << std::endl;
+  auto token = fCtx.AddFrameworkListener(lambda1);
+  auto token2 = fCtx.AddFrameworkListener(callback_function_1);
+  fCtx.AddFrameworkListener(&callback_function_2);
+  auto token3 = fCtx.AddFrameworkListener(lambda2);
   fCtx.AddFrameworkListener(cb);
-  fCtx.AddFrameworkListener(CB());
-  std::cout << callback2fn << std::endl;
+  fCtx.AddFrameworkListener(CallbackFunctor());
+
   fCtx.RemoveFrameworkListener(cb);
   fCtx.RemoveFrameworkListener(token2);
   fCtx.RemoveFrameworkListener(token);
@@ -230,8 +232,9 @@ void testAddRemoveFrameworkListener()
 
   f.Init();
   fCtx = f.GetBundleContext();
-  fCtx.AddFrameworkListener(callback1);
-  fCtx.AddFrameworkListener(callback1fn);
+  fCtx.AddFrameworkListener(lambda1);
+  fCtx.AddFrameworkListener(lambda1);
+  fCtx.AddFrameworkListener(callback_function_1);
   f.Start();    // generate framework event (started)
 }
 
@@ -387,12 +390,14 @@ int FrameworkListenerTest(int /*argc*/, char* /*argv*/[])
   */
 
   //testStartStopFrameworkEvents();
-  testAddRemoveFrameworkListener();
+  //testAddRemoveFrameworkListener();
   //testFrameworkListenersAfterFrameworkStop();
   //testFrameworkListenerThrowingInvariant();
 #ifdef US_ENABLE_THREADING_SUPPORT
   //testDeadLock();
 #endif
+
+  testMultipleListeners();
 
   US_TEST_END()
 }

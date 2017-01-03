@@ -31,15 +31,6 @@
 
 namespace cppmicroservices {
 
-  class TestFrameworkListener {
-
-  public:
-
-    void FrameworkChanged1(const FrameworkEvent& event);
-    void FrameworkChanged2(const FrameworkEvent& event);
-  };
-
-
 class TestBundleListener {
 
 public:
