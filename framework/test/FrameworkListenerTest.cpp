@@ -187,12 +187,17 @@ void testAddRemoveFrameworkListener()
 
 void callback_function_1(const FrameworkEvent&)
 {
-  std::cout << "From free function cb1" << std::endl;
+  std::cout << "From free function callback_function_1" << std::endl;
 }
 
 void callback_function_2(const FrameworkEvent&)
 {
-  std::cout << "From free function cb2" << std::endl;
+  std::cout << "From free function callback_function_2" << std::endl;
+}
+
+void callback_function_3(int val, const FrameworkEvent&)
+{
+  std::cout << "From free function callback_function_3 with val " << val << std::endl;
 }
 
 class CallbackFunctor
@@ -204,38 +209,150 @@ public:
   }
 };
 
+class Listener
+{
+public:
+  void memfn1(const FrameworkEvent&)
+  {
+    std::cout << "From member function Listener::memfn1" << std::endl;
+  }
+
+  void memfn2(const FrameworkEvent&)
+  {
+    std::cout << "From member function Listener::memfn2" << std::endl;
+  }
+};
+
 void testMultipleListeners()
 {
-  auto f = FrameworkFactory().NewFramework();
-  f.Init();
-  BundleContext fCtx{ f.GetBundleContext() };
-
   auto lambda1 = [](const FrameworkEvent&) { std::cout << "From lambda1" << std::endl; };
   auto lambda2 = [](const FrameworkEvent&) { std::cout << "From lambda2" << std::endl; };
-  f.Init();
-  fCtx = f.GetBundleContext();
   CallbackFunctor cb;
+  Listener l1;
+  Listener l2;
 
-  auto token = fCtx.AddFrameworkListener(lambda1);
-  auto token2 = fCtx.AddFrameworkListener(callback_function_1);
+  auto f = FrameworkFactory().NewFramework();
+
+  // 1. Add all listeners
+  f.Init();
+  BundleContext fCtx{ f.GetBundleContext() };
+  fCtx.AddFrameworkListener(callback_function_1);
   fCtx.AddFrameworkListener(&callback_function_2);
-  auto token3 = fCtx.AddFrameworkListener(lambda2);
+  fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
   fCtx.AddFrameworkListener(cb);
+  fCtx.AddFrameworkListener(lambda1);
+  fCtx.AddFrameworkListener(lambda2);
   fCtx.AddFrameworkListener(CallbackFunctor());
-
-  fCtx.RemoveFrameworkListener(cb);
-  fCtx.RemoveFrameworkListener(token2);
-  fCtx.RemoveFrameworkListener(token);
+  fCtx.AddFrameworkListener(std::bind(callback_function_3, 42, std::placeholders::_1));
   f.Start();    // generate framework event (started)
   f.Stop();
   f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing addition of multiple listeners" << std::endl << std::endl;
 
+  // 2. Add all listeners and try removing listeners using their name
   f.Init();
   fCtx = f.GetBundleContext();
-  fCtx.AddFrameworkListener(lambda1);
-  fCtx.AddFrameworkListener(lambda1);
+  // Add listeners of each variety
+  // Listeners with distinct addresses
   fCtx.AddFrameworkListener(callback_function_1);
+  fCtx.AddFrameworkListener(&callback_function_2);
+  fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
+  fCtx.AddFrameworkListener(cb);
+  // Listeners of the other variety
+  fCtx.AddFrameworkListener(lambda1);
+  fCtx.AddFrameworkListener(lambda2);
+  fCtx.AddFrameworkListener(CallbackFunctor());
+  fCtx.AddFrameworkListener(std::bind(callback_function_3, 42, std::placeholders::_1));
+
+  // Remove listeners with distinct addresses using the way how
+  // they were added. They return true if they are successful.
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(callback_function_1), "Removing free function 1");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&callback_function_2), "Removing free function 2");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn1), "Removing member function of l1");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn2), "Removing member function of l2");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(cb), "Removing functor cb");
+  // Remove listeners using the name of lambdas. They fail and it's indicated by returning false
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(lambda1) == false, "Removing lambda1 fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(lambda2) == false, "Removing lambda2 fails and returns false");
+
+  // This should trigger only the 4 non-distinct addresses listeners i.e. the 2 lambda functions, the
+  // rvalue functor object and the std::bind object.
   f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing removing listeners using the name of the callable" << std::endl << std::endl;
+
+  // 3. Add all listeners and remove them using tokens
+  f.Init();
+  fCtx = f.GetBundleContext();
+  auto token1 = fCtx.AddFrameworkListener(callback_function_1);
+  auto token2 = fCtx.AddFrameworkListener(&callback_function_2);
+  auto token3 = fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  auto token4 = fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
+  auto token5 = fCtx.AddFrameworkListener(cb);
+  auto token6 = fCtx.AddFrameworkListener(lambda1);
+  auto token7 = fCtx.AddFrameworkListener(lambda2);
+  auto token8 = fCtx.AddFrameworkListener(CallbackFunctor());
+  auto token9 = fCtx.AddFrameworkListener(std::bind(callback_function_3, 42, std::placeholders::_1));
+  // Remove all added listeners
+  fCtx.RemoveFrameworkListener(token1);
+  fCtx.RemoveFrameworkListener(token2);
+  fCtx.RemoveFrameworkListener(token3);
+  fCtx.RemoveFrameworkListener(token4);
+  fCtx.RemoveFrameworkListener(token5);
+  fCtx.RemoveFrameworkListener(token6);
+  fCtx.RemoveFrameworkListener(token7);
+  fCtx.RemoveFrameworkListener(token8);
+  fCtx.RemoveFrameworkListener(token9);
+  // This should result in no output because all the listeners were successfully removed
+  f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing addition and removing listeners using tokens" << std::endl << std::endl;
+
+  // 4. Add and remove multiple non-static member function listeners
+  f.Init();
+  fCtx = f.GetBundleContext();
+  fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  fCtx.AddFrameworkListener(&l1, &Listener::memfn2);
+  fCtx.AddFrameworkListener(&l2, &Listener::memfn1);
+  fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
+  // Removing these listeners by name fails (and returns false)
+  // because removing more than one member function listener from the same object is ambiguous
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn1) == false,
+                                                 "Removing member function fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn2) == false,
+                                                 "Removing member function fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn1) == false,
+                                                 "Removing member function fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn2) == false,
+                                                 "Removing member function fails and returns false");
+  // This should result in all 4 member functions getting triggered.
+  f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing removing multiple member function listeners using the name" << std::endl << std::endl;
+
+  // 5. Add and remove multiple non-static member function listeners, but this time using tokens
+  f.Init();
+  fCtx = f.GetBundleContext();
+  token1 = fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  token2 = fCtx.AddFrameworkListener(&l1, &Listener::memfn2);
+  token3 = fCtx.AddFrameworkListener(&l2, &Listener::memfn1);
+  token4 = fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
+  // Remove these listeners using the tokens
+  fCtx.RemoveFrameworkListener(token1);
+  fCtx.RemoveFrameworkListener(token2);
+  fCtx.RemoveFrameworkListener(token3);
+  fCtx.RemoveFrameworkListener(token4);
+  // This should result in no output because there are all the registered listeners were
+  // successfully removed using tokens
+  f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing removing multiple member function listeners using tokens" << std::endl << std::endl;
 }
 
 void testFrameworkListenersAfterFrameworkStop()

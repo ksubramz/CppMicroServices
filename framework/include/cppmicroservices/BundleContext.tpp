@@ -39,18 +39,26 @@ BundleContext::AddFrameworkListener(const ListenerType& listener)
 }
 
 template <typename ListenerType>
-typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, bool>::type
 BundleContext::RemoveFrameworkListener(const ListenerType& listener)
 {
   uintptr_t address = getAddress(listener);
-  RemoveFrameworkListener(address);
+  bool ret = RemoveFrameworkListener(address);
+  // This should always be true because this function gets dispatched only in the case of listeners with
+  // distinct addresses.
+  assert (ret == true);
+  return true;
 }
 
 template <typename ListenerType>
-typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, bool>::type
 BundleContext::RemoveFrameworkListener(const ListenerType& listener)
 {
   uintptr_t address = getAddress(listener);
-  RemoveFrameworkListener(address);
+  bool ret = RemoveFrameworkListener(address);
+  // This should always be true because this function gets dispatched only in the case of listeners with
+  // distinct addresses.
+  assert (ret == true);
+  return true;
 }
 }

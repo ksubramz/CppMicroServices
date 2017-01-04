@@ -375,17 +375,13 @@ FrameworkToken BundleContext::AddFrameworkListener(const FrameworkListener& list
   return token;
 }
 
-void BundleContext::RemoveFrameworkListener(const FrameworkListener& listener)
+bool BundleContext::RemoveFrameworkListener(const FrameworkListener& listener)
 {
-  //d->CheckValid();
-  //auto b = (d->Lock(), d->bundle);
-
-  // CONCURRENCY NOTE: This is a check-then-act situation,
-  // but we ignore it since the time window is small and
-  // the result is the same as if the calling thread had
-  // won the race condition.
-
-  //b->coreCtx->listeners.RemoveFrameworkListener(d, listener);
+  // Listeners which don't have distinct addresses cannot be removed by specifying the
+  // name of the listener. This function exists purely for backwards compatibility.
+  // By returning false, we are signaling to callers that removing of the said listener
+  // was unsuccessful.
+  return false;
 }
 
 void BundleContext::RemoveFrameworkListener(FrameworkToken token)
@@ -506,7 +502,7 @@ FrameworkToken BundleContext::AddFrameworkListener(const FrameworkListener& list
   return token;
 }
 
-void BundleContext::RemoveFrameworkListener(uintptr_t address)
+bool BundleContext::RemoveFrameworkListener(uintptr_t address)
 {
   d->CheckValid();
   auto b = (d->Lock(), d->bundle);
@@ -515,11 +511,19 @@ void BundleContext::RemoveFrameworkListener(uintptr_t address)
   // but we ignore it since the time window is small and
   // the result is the same as if the calling thread had
   // won the race condition.
+
+  // If we find one instance of a listener with address
+  // "address", we can trivially remove that. Do so, and return
+  // true. Otherwise, it's ambiguous (in the case of multiple
+  // non-static member functions of the same object), so we
+  // do nothing and return false.
   if (b->coreCtx->listeners.GetAddressCount(d, address) == 1)
   {
     FrameworkToken token = b->coreCtx->listeners.MakeToken(d, address, false);
     b->coreCtx->listeners.RemoveFrameworkListener(d, token);
+    return true;
   }
+  return false;
 }
 
 

@@ -617,7 +617,7 @@ public:
   void RemoveBundleListener(const BundleListener& delegate);
 
   FrameworkToken AddFrameworkListener(const FrameworkListener& listener);
-  void RemoveFrameworkListener(const FrameworkListener& listener);
+  bool RemoveFrameworkListener(const FrameworkListener& listener);
 
   template <typename ListenerType>
   typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, FrameworkToken>::type
@@ -628,11 +628,11 @@ public:
   AddFrameworkListener(const ListenerType& listener);
 
   template <typename ListenerType>
-  typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, void>::type
+  typename std::enable_if<is_functor_or_free_function<ListenerType, void(const FrameworkEvent &)>::value, bool>::type
   RemoveFrameworkListener(const ListenerType& listener);
 
   template <typename ListenerType>
-  typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, void>::type
+  typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, bool>::type
   RemoveFrameworkListener(const ListenerType& listener);
 
   void RemoveFrameworkListener(FrameworkToken token);
@@ -801,10 +801,10 @@ public:
    * @see AddFrameworkListener()
    */
   template<class R>
-  void RemoveFrameworkListener(R* receiver, void(R::*callback)(const FrameworkEvent&))
+  bool RemoveFrameworkListener(R* receiver, void(R::*callback)(const FrameworkEvent&))
   {
     uintptr_t receiver_address = reinterpret_cast<uintptr_t>(receiver);
-    RemoveFrameworkListener(receiver_address);
+    return RemoveFrameworkListener(receiver_address);
   }
 
   /**
@@ -871,7 +871,7 @@ private:
   void RemoveBundleListener(const BundleListener& delegate, void* data);
 
   FrameworkToken AddFrameworkListener(const FrameworkListener& listener, uintptr_t address, bool addDuplicate);
-  void RemoveFrameworkListener(uintptr_t address);
+  bool RemoveFrameworkListener(uintptr_t address);
 
   template <typename ListenerType>
   typename std::enable_if<std::is_class<ListenerType>::value, uintptr_t>::type
