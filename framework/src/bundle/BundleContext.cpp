@@ -384,7 +384,7 @@ bool BundleContext::RemoveFrameworkListener(const FrameworkListener& listener)
   return false;
 }
 
-void BundleContext::RemoveFrameworkListener(FrameworkToken token)
+bool BundleContext::RemoveFrameworkListener(FrameworkToken token)
 {
   d->CheckValid();
   auto b = (d->Lock(), d->bundle);
@@ -394,8 +394,7 @@ void BundleContext::RemoveFrameworkListener(FrameworkToken token)
   // the result is the same as if the calling thread had
   // won the race condition.
 
-  b->coreCtx->listeners.RemoveFrameworkListener(d, token);
-
+  return b->coreCtx->listeners.RemoveFrameworkListener(d, token);
 }
 
 void BundleContext::AddServiceListener(const ServiceListener& delegate, void* data,

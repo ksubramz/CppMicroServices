@@ -635,7 +635,7 @@ public:
   typename std::enable_if<is_functor_or_free_function<ListenerType *, void(const FrameworkEvent &)>::value, bool>::type
   RemoveFrameworkListener(const ListenerType& listener);
 
-  void RemoveFrameworkListener(FrameworkToken token);
+  bool RemoveFrameworkListener(FrameworkToken token);
 
   /**
    * Adds the specified <code>callback</code> with the

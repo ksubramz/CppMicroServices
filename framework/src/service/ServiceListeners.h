@@ -156,7 +156,7 @@ public:
   * @param listener Object to remove.
   * @param data Additional data to distinguish FrameworkListener objects.
   */
-  void RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, FrameworkToken token);
+  bool RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context, FrameworkToken token);
 
   void SendFrameworkEvent(const FrameworkEvent& evt);
 

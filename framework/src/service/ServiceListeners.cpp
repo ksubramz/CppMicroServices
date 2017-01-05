@@ -192,15 +192,23 @@ void ServiceListeners::AddFrameworkListener(const std::shared_ptr<BundleContextP
   }
 }
 
-void ServiceListeners::RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context,
+bool ServiceListeners::RemoveFrameworkListener(const std::shared_ptr<BundleContextPrivate>& context,
                                                FrameworkToken token)
 {
   auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
   auto& listeners = frameworkListenerMap.value[context];
-  listeners.erase(std::remove_if(listeners.begin(),
-                                 listeners.end(),
-                                 std::bind(FrameworkListenerCompare, token, std::placeholders::_1)),
-                  listeners.end());
+  auto it = std::remove_if(listeners.begin(),
+                           listeners.end(),
+                           std::bind(FrameworkListenerCompare, token, std::placeholders::_1));
+  if (it == listeners.end())
+  {
+    return false;
+  }
+  else
+  {
+    listeners.erase(it, listeners.end());
+    return true;
+  }
 }
 
 void ServiceListeners::SendFrameworkEvent(const FrameworkEvent& evt)

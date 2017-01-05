@@ -276,6 +276,17 @@ void testMultipleListeners()
   // Remove listeners using the name of lambdas. They fail and it's indicated by returning false
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(lambda1) == false, "Removing lambda1 fails and returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(lambda2) == false, "Removing lambda2 fails and returns false");
+  // Remove the distinct address listeners again. These should be no-op and the operation returns false
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(callback_function_1) == false,
+                    "Removing free function 1 again fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&callback_function_2) == false,
+                    "Removing free function 2 again fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn1) == false,
+                    "Removing member function of l1 again fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn2) == false,
+                    "Removing member function of l2 again fails and returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(cb) == false,
+                    "Removing functor cb again fails and returns false");
 
   // This should trigger only the 4 non-distinct addresses listeners i.e. the 2 lambda functions, the
   // rvalue functor object and the std::bind object.
@@ -296,16 +307,36 @@ void testMultipleListeners()
   auto token7 = fCtx.AddFrameworkListener(lambda2);
   auto token8 = fCtx.AddFrameworkListener(CallbackFunctor());
   auto token9 = fCtx.AddFrameworkListener(std::bind(callback_function_3, 42, std::placeholders::_1));
-  // Remove all added listeners
-  fCtx.RemoveFrameworkListener(token1);
-  fCtx.RemoveFrameworkListener(token2);
-  fCtx.RemoveFrameworkListener(token3);
-  fCtx.RemoveFrameworkListener(token4);
-  fCtx.RemoveFrameworkListener(token5);
-  fCtx.RemoveFrameworkListener(token6);
-  fCtx.RemoveFrameworkListener(token7);
-  fCtx.RemoveFrameworkListener(token8);
-  fCtx.RemoveFrameworkListener(token9);
+  // Remove all added listeners using tokens. These should all return true because of successful removal.
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token1), "Removing listener associated with token1");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token2), "Removing listener associated with token2");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token3), "Removing listener associated with token3");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token4), "Removing listener associated with token4");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token5), "Removing listener associated with token5");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token6), "Removing listener associated with token6");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token7), "Removing listener associated with token7");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token8), "Removing listener associated with token8");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token9), "Removing listener associated with token9");
+  // Remove all added listeners again using token. These should all return false because the listeners
+  // associated with these tokens have already been removed.
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token1) == false,
+                    "Removing listener associated with token1 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token2) == false,
+                    "Removing listener associated with token2 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token3) == false,
+                    "Removing listener associated with token3 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token4) == false,
+                    "Removing listener associated with token4 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token5) == false,
+                    "Removing listener associated with token5 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token6) == false,
+                    "Removing listener associated with token6 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token7) == false,
+                    "Removing listener associated with token7 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token8) == false,
+                    "Removing listener associated with token8 again returns false");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token9) == false,
+                    "Removing listeners associated with token9 again returns false");
   // This should result in no output because all the listeners were successfully removed
   f.Start();    // generate framework event (started)
   f.Stop();
@@ -322,13 +353,13 @@ void testMultipleListeners()
   // Removing these listeners by name fails (and returns false)
   // because removing more than one member function listener from the same object is ambiguous
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn1) == false,
-                                                 "Removing member function fails and returns false");
+                    "Removing member function fails and returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn2) == false,
-                                                 "Removing member function fails and returns false");
+                    "Removing member function fails and returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn1) == false,
-                                                 "Removing member function fails and returns false");
+                    "Removing member function fails and returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn2) == false,
-                                                 "Removing member function fails and returns false");
+                    "Removing member function fails and returns false");
   // This should result in all 4 member functions getting triggered.
   f.Start();    // generate framework event (started)
   f.Stop();
@@ -343,10 +374,10 @@ void testMultipleListeners()
   token3 = fCtx.AddFrameworkListener(&l2, &Listener::memfn1);
   token4 = fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
   // Remove these listeners using the tokens
-  fCtx.RemoveFrameworkListener(token1);
-  fCtx.RemoveFrameworkListener(token2);
-  fCtx.RemoveFrameworkListener(token3);
-  fCtx.RemoveFrameworkListener(token4);
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token1), "Removing member function associated with token1");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token2), "Removing member function associated with token2");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token3), "Removing member function associated with token3");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token4), "Removing member function associated with token4");
   // This should result in no output because there are all the registered listeners were
   // successfully removed using tokens
   f.Start();    // generate framework event (started)
