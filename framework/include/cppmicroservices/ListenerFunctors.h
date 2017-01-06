@@ -70,7 +70,7 @@ namespace cppmicroservices {
   FrameworkListener BindFrameworkListenerToFunctor(X* x, void (X::*Fnc)(const FrameworkEvent&))
   { return std::bind(Fnc, x, std::placeholders::_1); }
 
-  using FrameworkToken = std::pair<std::uint64_t, std::uint64_t>;
+  using FrameworkToken = std::pair<std::uintptr_t, std::uint64_t>;
 
 }
 

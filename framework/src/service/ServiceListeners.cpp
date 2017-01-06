@@ -143,7 +143,7 @@ FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPr
   return token;
 }
 
-uint64_t ServiceListeners::GetAddressCount(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address)
+std::size_t ServiceListeners::GetNumListenersWithAddress(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address)
 {
   uint64_t count = 0;
   auto& listeners = frameworkListenerMap.value[context];
@@ -151,7 +151,7 @@ uint64_t ServiceListeners::GetAddressCount(const std::shared_ptr<BundleContextPr
 
   for (auto& listener : listeners)
   {
-    if (std::get<0>(listener).first == static_cast<std::uint64_t>(address))
+    if (std::get<0>(listener).first == address)
     {
       count++;
     }
@@ -162,14 +162,14 @@ uint64_t ServiceListeners::GetAddressCount(const std::shared_ptr<BundleContextPr
 FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPrivate>& context,
                                            std::uintptr_t address, bool addIfPresent)
 {
-  FrameworkToken token{ static_cast<std::uint64_t>(address), 0x0 };
+  FrameworkToken token{ address, 0x0 };
 
   if (addIfPresent)
   {
     auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
     auto& id = frameworkListenerMap.id[context];
 
-    if (GetAddressCount(context, address) > 0)
+    if (GetNumListenersWithAddress(context, address) > 0)
     {
         id++;
         token.second = id;

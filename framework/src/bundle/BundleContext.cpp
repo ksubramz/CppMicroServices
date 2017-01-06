@@ -516,7 +516,7 @@ bool BundleContext::RemoveFrameworkListener(uintptr_t address)
   // true. Otherwise, it's ambiguous (in the case of multiple
   // non-static member functions of the same object), so we
   // do nothing and return false.
-  if (b->coreCtx->listeners.GetAddressCount(d, address) == 1)
+  if (b->coreCtx->listeners.GetNumListenersWithAddress(d, address) == 1)
   {
     FrameworkToken token = b->coreCtx->listeners.MakeToken(d, address, false);
     b->coreCtx->listeners.RemoveFrameworkListener(d, token);

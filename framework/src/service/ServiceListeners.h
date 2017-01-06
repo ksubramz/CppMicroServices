@@ -87,7 +87,7 @@ public:
 
   ServiceListeners(CoreBundleContext* coreCtx);
 
-  uint64_t GetAddressCount(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address);
+  std::size_t GetNumListenersWithAddress(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address);
   FrameworkToken MakeToken(const std::shared_ptr<BundleContextPrivate>& context);
   FrameworkToken MakeToken(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address, bool addIfPresent);
 
