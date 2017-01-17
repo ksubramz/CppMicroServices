@@ -519,7 +519,10 @@ bool BundleContext::RemoveFrameworkListener(uintptr_t address)
   if (b->coreCtx->listeners.GetNumListenersWithAddress(d, address) == 1)
   {
     FrameworkToken token = b->coreCtx->listeners.MakeToken(d, address, false);
-    b->coreCtx->listeners.RemoveFrameworkListener(d, token);
+    bool ret = b->coreCtx->listeners.RemoveFrameworkListener(d, token);
+    // ret has to be true because there is exactly one listener associated with
+    // "address"
+    assert(ret);
     return true;
   }
   return false;

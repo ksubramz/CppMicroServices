@@ -870,7 +870,7 @@ private:
   void AddBundleListener(const BundleListener& delegate, void* data);
   void RemoveBundleListener(const BundleListener& delegate, void* data);
 
-  FrameworkToken AddFrameworkListener(const FrameworkListener& listener, uintptr_t address, bool addDuplicate);
+  FrameworkToken AddFrameworkListener(const FrameworkListener& listener, uintptr_t address, bool addIfPresent);
   bool RemoveFrameworkListener(uintptr_t address);
 
   template <typename ListenerType>

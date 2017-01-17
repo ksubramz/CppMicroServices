@@ -264,7 +264,8 @@ void testMultipleListeners()
   fCtx.AddFrameworkListener(lambda1);
   fCtx.AddFrameworkListener(lambda2);
   fCtx.AddFrameworkListener(CallbackFunctor());
-  fCtx.AddFrameworkListener(std::bind(callback_function_3, 42, std::placeholders::_1));
+  auto bind1 = std::bind(callback_function_3, 42, std::placeholders::_1);
+  fCtx.AddFrameworkListener(bind1);
 
   // Remove listeners with distinct addresses using the way how
   // they were added. They return true if they are successful.
@@ -273,6 +274,7 @@ void testMultipleListeners()
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l1, &Listener::memfn1), "Removing member function of l1");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(&l2, &Listener::memfn2), "Removing member function of l2");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(cb), "Removing functor cb");
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(bind1), "Removing bind object bind1");
   // Remove listeners using the name of lambdas. They fail and it's indicated by returning false
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(lambda1) == false, "Removing lambda1 fails and returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(lambda2) == false, "Removing lambda2 fails and returns false");
@@ -287,9 +289,10 @@ void testMultipleListeners()
                     "Removing member function of l2 again fails and returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(cb) == false,
                     "Removing functor cb again fails and returns false");
-
-  // This should trigger only the 4 non-distinct addresses listeners i.e. the 2 lambda functions, the
-  // rvalue functor object and the std::bind object.
+  US_TEST_CONDITION(fCtx.RemoveFrameworkListener(bind1) == false,
+                    "Removing bind object bind1 again fails and returns false");
+  // This should trigger only the 3 non-distinct addresses listeners i.e. the 2 lambda functions, the
+  // rvalue functor object
   f.Start();    // generate framework event (started)
   f.Stop();
   f.WaitForStop(std::chrono::milliseconds::zero());
@@ -306,7 +309,7 @@ void testMultipleListeners()
   auto token6 = fCtx.AddFrameworkListener(lambda1);
   auto token7 = fCtx.AddFrameworkListener(lambda2);
   auto token8 = fCtx.AddFrameworkListener(CallbackFunctor());
-  auto token9 = fCtx.AddFrameworkListener(std::bind(callback_function_3, 42, std::placeholders::_1));
+  auto token9 = fCtx.AddFrameworkListener(bind1);
   // Remove all added listeners using tokens. These should all return true because of successful removal.
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token1), "Removing listener associated with token1");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token2), "Removing listener associated with token2");
@@ -336,7 +339,7 @@ void testMultipleListeners()
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token8) == false,
                     "Removing listener associated with token8 again returns false");
   US_TEST_CONDITION(fCtx.RemoveFrameworkListener(token9) == false,
-                    "Removing listeners associated with token9 again returns false");
+                    "Removing listener associated with token9 again returns false");
   // This should result in no output because all the listeners were successfully removed
   f.Start();    // generate framework event (started)
   f.Stop();
@@ -384,6 +387,55 @@ void testMultipleListeners()
   f.Stop();
   f.WaitForStop(std::chrono::milliseconds::zero());
   std::cout << "-- End of testing removing multiple member function listeners using tokens" << std::endl << std::endl;
+
+  // 6. Add same listeners multiple times for listeners with distinct addresses
+  f.Init();
+  fCtx = f.GetBundleContext();
+  token1 = fCtx.AddFrameworkListener(callback_function_1);
+  token2 = fCtx.AddFrameworkListener(callback_function_1);
+  token3 = fCtx.AddFrameworkListener(&callback_function_2);
+  token4 = fCtx.AddFrameworkListener(&callback_function_2);
+  token5 = fCtx.AddFrameworkListener(cb);
+  token6 = fCtx.AddFrameworkListener(cb);
+  token7 = fCtx.AddFrameworkListener(bind1);
+  token8 = fCtx.AddFrameworkListener(bind1);
+  // Test if adding listener with distinct address again returns the same token object
+  US_TEST_CONDITION(token1 == token2, "Adding distinct address listener again should return the same token");
+  US_TEST_CONDITION(token3 == token4, "Adding distinct address listener again should return the same token");
+  US_TEST_CONDITION(token5 == token6, "Adding distinct address listener again should return the same token");
+  US_TEST_CONDITION(token7 == token8, "Adding distinct address listener again should return the same token");
+  // This results in addition of only one listener of each variety because listeners with
+  // distinct addresses aren't added again if they already exist. There's a total of 4 listeners
+  f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing adding listeners with distinct addresses multiple times" << std::endl << std::endl;
+
+  // 7. Add same listeners multiple times for other type of listeners
+  f.Init();
+  fCtx = f.GetBundleContext();
+  auto lambda3 = [](const FrameworkEvent&) { std::cout << "From lambda3" << std::endl; };
+  token1 = fCtx.AddFrameworkListener(lambda3);
+  token2 = fCtx.AddFrameworkListener(lambda3);
+  token3 = fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  token4 = fCtx.AddFrameworkListener(&l1, &Listener::memfn1);
+  token5 = fCtx.AddFrameworkListener(&l1, &Listener::memfn2);
+  token6 = fCtx.AddFrameworkListener(&l1, &Listener::memfn2);
+  token7 = fCtx.AddFrameworkListener(&l2, &Listener::memfn1);
+  token8 = fCtx.AddFrameworkListener(&l2, &Listener::memfn1);
+  token9 = fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
+  auto token10 = fCtx.AddFrameworkListener(&l2, &Listener::memfn2);
+  // Test if adding listener again returns a different token
+  US_TEST_CONDITION(token1 != token2, "Adding this type of listener again should return different token");
+  US_TEST_CONDITION(token3 != token4, "Adding this type of listener again should return different token");
+  US_TEST_CONDITION(token5 != token6, "Adding this type of listener again should return different token");
+  US_TEST_CONDITION(token7 != token8, "Adding this type of listener again should return different token");
+  US_TEST_CONDITION(token9 != token10, "Adding this type of listener again should return different token");
+  // This results in 10 listeners getting called
+  f.Start();    // generate framework event (started)
+  f.Stop();
+  f.WaitForStop(std::chrono::milliseconds::zero());
+  std::cout << "-- End of testing adding listeners multiple times" << std::endl << std::endl;
 }
 
 void testFrameworkListenersAfterFrameworkStop()

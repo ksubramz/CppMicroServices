@@ -134,15 +134,6 @@ void ServiceListeners::RemoveBundleListener(const std::shared_ptr<BundleContextP
   bundleListenerMap.value[context].remove_if(std::bind(BundleListenerCompare(), std::make_pair(listener, data), std::placeholders::_1));
 }
 
-FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPrivate>& context)
-{
-  auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
-  auto& id = frameworkListenerMap.id[context];
-  id++;
-  FrameworkToken token{ 0x0, id };
-  return token;
-}
-
 std::size_t ServiceListeners::GetNumListenersWithAddress(const std::shared_ptr<BundleContextPrivate>& context, std::uintptr_t address)
 {
   uint64_t count = 0;
@@ -159,10 +150,18 @@ std::size_t ServiceListeners::GetNumListenersWithAddress(const std::shared_ptr<B
   return count;
 }
 
+FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPrivate>& context)
+{
+  auto l = frameworkListenerMap.Lock(); US_UNUSED(l);
+  auto& id = frameworkListenerMap.id[context];
+  id++;
+  return FrameworkToken{ 0x0, id };
+}
+
 FrameworkToken ServiceListeners::MakeToken(const std::shared_ptr<BundleContextPrivate>& context,
                                            std::uintptr_t address, bool addIfPresent)
 {
-  FrameworkToken token{ address, 0x0 };
+  FrameworkToken token{ address, 0 };
 
   if (addIfPresent)
   {
